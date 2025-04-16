@@ -72,15 +72,15 @@ func main() {
 		klog.FlushAndExit(klog.ExitFlushTimeout, 1)
 	}
 
-	k8sInformerFactory := kubeinformers.NewSharedInformerFactoryWithOptions(k8sClient, 0, kubeinformers.WithTweakListOptions(func(listOption *metav1.ListOptions) {
-		listOption.AllowWatchBookmarks = true
-	}))
-
 	networkClient, err := networkv1.NewForConfig(cfg)
 	if err != nil {
 		klog.Errorf("Error building networkclient clientset: %v", err)
 		klog.FlushAndExit(klog.ExitFlushTimeout, 1)
 	}
+
+	k8sInformerFactory := kubeinformers.NewSharedInformerFactoryWithOptions(k8sClient, 0, kubeinformers.WithTweakListOptions(func(listOption *metav1.ListOptions) {
+		listOption.AllowWatchBookmarks = true
+	}))
 
 	nadInformerFactory := nadinformers.NewSharedInformerFactoryWithOptions(networkClient, 0, nadinformers.WithTweakListOptions(func(listOption *metav1.ListOptions) {
 		listOption.AllowWatchBookmarks = true

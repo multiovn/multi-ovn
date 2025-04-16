@@ -16,9 +16,11 @@ import (
 	clientset "github.com/multiovn/multi-ovn/pkg/client/clientset/versioned"
 
 	"github.com/emicklei/go-restful"
+	multiovnlist "github.com/multiovn/multi-ovn/pkg/client/listers/multiovn/v1"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
+	kubelister "k8s.io/client-go/listers/core/v1"
 	"k8s.io/klog"
 )
 
@@ -30,6 +32,8 @@ type CniServerHandler struct {
 	Config       *Configuration
 	KubeClient   kubernetes.Interface
 	Crdclientset clientset.Interface
+	PodLister    kubelister.PodLister
+	PortLister   multiovnlist.PortLister
 }
 
 type Network struct {
@@ -38,8 +42,12 @@ type Network struct {
 	Namespace string `json:"namespace"`
 }
 
-func createCniServerHandler(config *Configuration) (*CniServerHandler, error) {
-	csh := &CniServerHandler{KubeClient: config.KubeClient, Config: config, Crdclientset: config.Crdclientset}
+func createCniServerHandler(config *Configuration, podLister kubelister.PodLister, portLister multiovnlist.PortLister) (*CniServerHandler, error) {
+	csh := &CniServerHandler{
+		KubeClient: config.KubeClient,
+		Config:     config, Crdclientset: config.Crdclientset,
+		PodLister:  podLister,
+		PortLister: portLister}
 	return csh, nil
 }
 
@@ -79,8 +87,8 @@ func (csh CniServerHandler) handleAdd(req *restful.Request, resp *restful.Respon
 	var macAddr, ipAddr, portName string
 	found := false
 	var routes []multiovnv1.Route
-	for i := 0; i < 10; i++ {
-		pod, err := csh.KubeClient.CoreV1().Pods(podRequest.PodNamespace).Get(context.Background(), podRequest.PodName, v1.GetOptions{})
+	for i := 0; i < 20; i++ {
+		pod, err := csh.PodLister.Pods(podRequest.PodNamespace).Get(podRequest.PodName)
 		if err != nil {
 			klog.Errorf("get pod %s/%s failed %v", podRequest.PodNamespace, podRequest.PodName, err)
 			resp.WriteHeaderAndEntity(http.StatusInternalServerError, err)
@@ -90,34 +98,34 @@ func (csh CniServerHandler) handleAdd(req *restful.Request, resp *restful.Respon
 		portInfoName, err := getPortInfoNameFromPodNetwork(pod, podRequest.NetworkName)
 		if err != nil {
 			klog.Errorf("get port %s failed %v", portInfoName, err)
-			time.Sleep(2 * time.Second)
+			time.Sleep(1 * time.Second)
 			continue
 		}
 
-		port, err := csh.Crdclientset.MultiovnV1().Ports(podRequest.PodNamespace).Get(context.Background(), portInfoName, v1.GetOptions{})
+		port, err := csh.PortLister.Ports(podRequest.PodNamespace).Get(portInfoName)
 		if err != nil {
 			klog.Errorf("get port %s failed %v", portInfoName, err)
-			time.Sleep(2 * time.Second)
+			time.Sleep(1 * time.Second)
 			continue
 		}
 
 		if port.Status.MacAddress == "" {
 			klog.Errorf("port %s mac address is empty", portInfoName)
-			time.Sleep(2 * time.Second)
+			time.Sleep(1 * time.Second)
 			continue
 		}
 
 		logicalSwitchPort, err := csh.Crdclientset.MultiovnV1().LogicalSwitchPorts(podRequest.PodNamespace).Get(context.Background(), portInfoName, v1.GetOptions{})
 		if err != nil || logicalSwitchPort.Status.UUID == "" {
 			klog.Errorf("get logical switch port %s failed %v", portInfoName, err)
-			time.Sleep(2 * time.Second)
+			time.Sleep(1 * time.Second)
 			continue
 		}
 
 		if logicalSwitchPort.Spec.LogicalSwitchName != podRequest.LogicalSwitchName ||
 			logicalSwitchPort.Spec.LogicalSwitchNamespace != podRequest.LogicalSwitchNamespace {
 			klog.Errorf("logical switch port %s is not in the same logical switch %s/%s", portInfoName, podRequest.LogicalSwitchName, podRequest.LogicalSwitchNamespace)
-			time.Sleep(2 * time.Second)
+			time.Sleep(1 * time.Second)
 			continue
 		}
 

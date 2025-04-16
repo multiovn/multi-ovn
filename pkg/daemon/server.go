@@ -8,16 +8,53 @@ import (
 	"time"
 
 	"github.com/multiovn/multi-ovn/pkg/request"
+	"github.com/multiovn/multi-ovn/pkg/util"
 
 	"github.com/emicklei/go-restful"
+	multiovninformers "github.com/multiovn/multi-ovn/pkg/client/informers/externalversions"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	kubeinformers "k8s.io/client-go/informers"
+	"k8s.io/client-go/tools/cache"
 	"k8s.io/klog"
 )
 
 var RequestLogString = "[%s] Incoming %s %s %s request from %s"
 var ResponseLogString = "[%s] Outcoming response to %s %s %s with %d status code in %vms"
 
-func RunServer(config *Configuration) {
-	csh, err := createCniServerHandler(config)
+func RunServer(stopCh <-chan struct{}, config *Configuration) {
+
+	// Create a Kubernetes client informer to watch for pod events
+	kubeInformerFactory := kubeinformers.NewSharedInformerFactoryWithOptions(
+		config.KubeClient,
+		time.Second*30,
+		kubeinformers.WithTweakListOptions(func(options *metav1.ListOptions) {
+			options.FieldSelector = fmt.Sprintf("spec.nodeName=%s", config.NodeName)
+		}),
+	)
+
+	// Create a MultiOVN client informer to watch for port events
+	multiovnInformerFactory := multiovninformers.NewSharedInformerFactoryWithOptions(
+		config.Crdclientset,
+		time.Second*30,
+		multiovninformers.WithTweakListOptions(func(options *metav1.ListOptions) {
+
+		}),
+	)
+
+	kubeInformerFactory.Start(stopCh)
+	multiovnInformerFactory.Start(stopCh)
+
+	portLister := multiovnInformerFactory.Multiovn().V1().Ports().Lister()
+	portSynced := multiovnInformerFactory.Multiovn().V1().Ports().Informer().HasSynced
+	podLister := kubeInformerFactory.Core().V1().Pods().Lister()
+	podSynced := kubeInformerFactory.Core().V1().Pods().Informer().HasSynced
+
+	if !cache.WaitForCacheSync(stopCh,
+		podSynced, portSynced) {
+		util.LogFatalAndExit(nil, "failed to wait for caches to sync")
+	}
+
+	csh, err := createCniServerHandler(config, podLister, portLister)
 	if err != nil {
 		klog.Fatalf("create cni server handler failed %v", err)
 		return
