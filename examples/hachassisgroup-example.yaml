@@ -1,0 +1,11 @@
+apiVersion: multiovn.ovn.io/v1
+kind: HAChassisGroup
+metadata:
+  name: hcg-example
+  namespace: default
+spec:
+  externalIDs:
+    description: "Example HA Chassis Group for high availability"
+    environment: "production"
+    owner: "network-team"
+    app: "gateway-service" 

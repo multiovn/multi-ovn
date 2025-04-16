@@ -1,0 +1,55 @@
+---
+# Example 1: Basic PortGroup
+apiVersion: multiovn.io/v1
+kind: PortGroup
+metadata:
+  name: web-servers
+  namespace: default
+  labels:
+    app: web
+    tier: frontend
+spec:
+  externalIDs:
+    description: "Web server port group"
+    environment: "production"
+    owner: "network-team"
+---
+# Example 2: Database PortGroup
+apiVersion: multiovn.io/v1
+kind: PortGroup
+metadata:
+  name: database-servers
+  namespace: default
+  labels:
+    app: database
+    tier: backend
+spec:
+  externalIDs:
+    description: "Database server port group"
+    environment: "production"
+    owner: "database-team"
+    backup: "daily"
+---
+# Example 3: Development PortGroup
+apiVersion: multiovn.io/v1
+kind: PortGroup
+metadata:
+  name: dev-environment
+  namespace: development
+  labels:
+    environment: "dev"
+spec:
+  externalIDs:
+    description: "Development environment port group"
+    environment: "development"
+    owner: "dev-team"
+    temporary: "true"
+---
+# Example 4: Minimal PortGroup
+apiVersion: multiovn.io/v1
+kind: PortGroup
+metadata:
+  name: minimal-group
+  namespace: default
+spec:
+  externalIDs: {} 

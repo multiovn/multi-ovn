@@ -1,0 +1,61 @@
+---
+# Example 1: Basic PortInfo for IPv4 only
+apiVersion: multiovn.io/v1
+kind: PortInfo
+metadata:
+  name: ipv4-portinfo
+  namespace: default
+  labels:
+    app: sample-app
+    network: frontend
+spec:
+  macAddress: "00:11:22:33:44:55"
+  ipAddresses:
+    - "192.168.1.10/24"
+  routes:
+    - destination: "0.0.0.0/0"
+      nextHop: "192.168.1.1"
+  logicalSwitchPort: "frontend-lsp"
+---
+# Example 2: Dual-stack PortInfo (IPv4 and IPv6)
+apiVersion: multiovn.io/v1
+kind: PortInfo
+metadata:
+  name: dual-stack-portinfo
+  namespace: default
+  labels:
+    app: sample-app
+    network: backend
+spec:
+  macAddress: "00:11:22:33:44:66"
+  ipAddresses:
+    - "10.0.0.10/24"
+    - "fd00:1:2:3::10/64"
+  routes:
+    - destination: "0.0.0.0/0"
+      nextHop: "10.0.0.1"
+    - destination: "::/0"
+      nextHop: "fd00:1:2:3::1"
+  logicalSwitchPort: "backend-lsp"
+---
+# Example 3: PortInfo with multiple specific routes
+apiVersion: multiovn.io/v1
+kind: PortInfo
+metadata:
+  name: multi-route-portinfo
+  namespace: production
+  labels:
+    app: database
+    tier: data
+spec:
+  macAddress: "00:11:22:33:44:77"
+  ipAddresses:
+    - "172.16.0.10/24"
+  routes:
+    - destination: "0.0.0.0/0"
+      nextHop: "172.16.0.1"
+    - destination: "10.0.0.0/8"
+      nextHop: "172.16.0.254"
+    - destination: "192.168.0.0/16"
+      nextHop: "172.16.0.253"
+  logicalSwitchPort: "db-lsp" 

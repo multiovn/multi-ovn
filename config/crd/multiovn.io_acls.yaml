@@ -1,0 +1,98 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.17.2
+  name: acls.multiovn.io
+spec:
+  group: multiovn.io
+  names:
+    kind: ACL
+    listKind: ACLList
+    plural: acls
+    singular: acl
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .status.uuid
+      name: UUID
+      type: string
+    name: v1
+    schema:
+      openAPIV3Schema:
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            properties:
+              action:
+                type: string
+              direction:
+                type: string
+              externalIDs:
+                additionalProperties:
+                  type: string
+                type: object
+              label:
+                type: integer
+              log:
+                type: boolean
+              match:
+                type: string
+              meter:
+                type: string
+              name:
+                type: string
+              options:
+                additionalProperties:
+                  type: string
+                type: object
+              parentName:
+                type: string
+              parentNamespace:
+                type: string
+              parentType:
+                type: string
+              priority:
+                type: integer
+              severity:
+                type: string
+            required:
+            - action
+            - direction
+            - match
+            - parentName
+            - parentNamespace
+            - parentType
+            - priority
+            type: object
+          status:
+            properties:
+              parentUUID:
+                type: string
+              uuid:
+                type: string
+            type: object
+        required:
+        - spec
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}

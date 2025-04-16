@@ -1,0 +1,11 @@
+apiVersion: multiovn.io/v1
+kind: PortGroup
+metadata:
+  name: test
+  namespace: portgroup1
+spec:
+  externalIDs:
+    description: "Application server port group"
+    environment: "production"
+    owner: "app-team"
+    priority: "high"

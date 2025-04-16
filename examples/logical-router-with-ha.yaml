@@ -1,0 +1,71 @@
+---
+# HAChassisGroup resource
+apiVersion: multiovn.ovn.io/v1
+kind: HAChassisGroup
+metadata:
+  name: gateway-ha-group
+  namespace: network-system
+spec:
+  externalIDs:
+    description: "Gateway HA chassis group for external connectivity"
+    environment: "production"
+    owner: "network-team"
+---
+# HAChassis resources - members of the HAChassisGroup
+apiVersion: multiovn.ovn.io/v1
+kind: HAChassis
+metadata:
+  name: gateway-chassis-1
+  namespace: network-system
+spec:
+  chassisName: "node01.example.com"
+  priority: 100  # Higher priority indicates primary
+  haChassisGroupNamespace: "network-system"
+  haChassisGroupName: "gateway-ha-group"
+  externalIDs:
+    description: "Primary gateway chassis"
+---
+apiVersion: multiovn.ovn.io/v1
+kind: HAChassis
+metadata:
+  name: gateway-chassis-2
+  namespace: network-system
+spec:
+  chassisName: "node02.example.com"
+  priority: 50  # Lower priority indicates backup
+  haChassisGroupNamespace: "network-system"
+  haChassisGroupName: "gateway-ha-group"
+  externalIDs:
+    description: "Secondary gateway chassis"
+---
+# LogicalRouter resource
+apiVersion: multiovn.ovn.io/v1
+kind: LogicalRouter
+metadata:
+  name: router1
+  namespace: network-system
+spec:
+  enabled: true
+  options:
+    chassis: ""  # Let OVN choose based on the gateway port
+  externalIDs:
+    description: "Main router for east-west traffic"
+---
+# LogicalRouterPort that uses the HAChassisGroup
+apiVersion: multiovn.ovn.io/v1
+kind: LogicalRouterPort
+metadata:
+  name: gateway-port
+  namespace: network-system
+spec:
+  logicalRouterName: "router1"
+  logicalRouterNamespace: "network-system"
+  mac: "00:00:00:00:ff:01"
+  networks:
+    - "192.168.1.1/24"
+  # Reference to the HA chassis group for high availability
+  haChassisGroup: "gateway-ha-group"
+  externalIDs:
+    description: "Gateway router port with HA"
+  options:
+    gateway-chassis: ""  # Not needed as we're using HA chassis group 

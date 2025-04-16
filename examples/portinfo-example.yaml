@@ -1,0 +1,16 @@
+apiVersion: multiovn.io/v1
+kind: PortInfo
+metadata:
+  name: sample-portinfo
+  namespace: default
+spec:
+  macAddress: "00:11:22:33:44:55"
+  ipAddresses:
+    - "192.168.1.10/24"
+    - "fd00::10/64"
+  routes:
+    - destination: "0.0.0.0/0"
+      nextHop: "192.168.1.1"
+    - destination: "::/0"
+      nextHop: "fd00::1"
+  logicalSwitchPort: "sample-lsp" 

@@ -1,0 +1,58 @@
+---
+# HAChassisGroup resource
+apiVersion: multiovn.ovn.io/v1
+kind: HAChassisGroup
+metadata:
+  name: gateway-ha-group
+  namespace: network-system
+spec:
+  externalIDs:
+    description: "Gateway HA chassis group for production environment"
+    environment: "production"
+    owner: "network-team"
+    app: "gateway-service"
+---
+# HAChassis resource 1 (primary)
+apiVersion: multiovn.ovn.io/v1
+kind: HAChassis
+metadata:
+  name: gateway-chassis-1
+  namespace: network-system
+spec:
+  chassisName: "node01.example.com"
+  priority: 100  # Higher priority indicates primary
+  haChassisGroupNamespace: "network-system"
+  haChassisGroupName: "gateway-ha-group"
+  externalIDs:
+    description: "Primary gateway chassis"
+    role: "primary"
+---
+# HAChassis resource 2 (secondary)
+apiVersion: multiovn.ovn.io/v1
+kind: HAChassis
+metadata:
+  name: gateway-chassis-2
+  namespace: network-system
+spec:
+  chassisName: "node02.example.com"
+  priority: 50  # Lower priority indicates backup
+  haChassisGroupNamespace: "network-system"
+  haChassisGroupName: "gateway-ha-group"
+  externalIDs:
+    description: "Secondary gateway chassis"
+    role: "backup"
+---
+# HAChassis resource 3 (tertiary)
+apiVersion: multiovn.ovn.io/v1
+kind: HAChassis
+metadata:
+  name: gateway-chassis-3
+  namespace: network-system
+spec:
+  chassisName: "node03.example.com"
+  priority: 25  # Lowest priority
+  haChassisGroupNamespace: "network-system"
+  haChassisGroupName: "gateway-ha-group"
+  externalIDs:
+    description: "Tertiary gateway chassis"
+    role: "backup" 
